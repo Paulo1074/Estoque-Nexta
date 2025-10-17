@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Nexta - Brindes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="img/nexta.jpg" alt="Logo Estoque Nexta" class="logo-img">
+                <h1>Estoque Nexta</h1>
+            </div>
+
+            <div class="nav">
+                <a href="index.html" class="btn-nav">Movimentações</a>
+                <a href="uniforme.html" class="btn-nav">Uniformes</a>
+                <a href="Brindes.html" class="btn-nav active">Brindes</a>
+                <a href="#" class="btn-nav">Limpar dados</a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header>
+                <h2>Cadastro de Brindes</h2>
+            </header>
+
+            <section class="form-section">
+                <h3>Adicionar novo brinde</h3>
+                <form id="brindeForm">
+                    <input type="text" id="nomeBrinde" placeholder="Nome do brinde" required>
+                    <input type="text" id="descricaoBrinde" placeholder="Descrição (opcional)">
+                    <input type="number" id="quantidadeBrinde" placeholder="Quantidade" min="0" value="0" required>
+                    <button type="submit" class="btn primary">Salvar brinde</button>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <h3>Brindes cadastrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Brinde</th>
+                            <th>Descrição</th>
+                            <th>Quantidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaBrindes"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById("brindeForm");
+        const tabela = document.getElementById("tabelaBrindes");
+
+        let brindes = JSON.parse(localStorage.getItem("brindes")) || [];
+        let editIndex = -1;
+
+        function atualizarTabela() {
+            tabela.innerHTML = "";
+            brindes.forEach((brinde, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${brinde.nome}</td>
+                    <td>${brinde.descricao || "-"}</td>
+                    <td>${brinde.quantidade}</td>
+                    <td>
+                        <button class="edit-btn" data-index="${index}">Editar</button>
+                        <button class="delete-btn" data-index="${index}">Excluir</button>
+                    </td>
+                `;
+                tabela.appendChild(tr);
+            });
+
+            // Adiciona eventos aos botões
+            document.querySelectorAll(".edit-btn").forEach(btn => {
+                btn.addEventListener("click", () => editarBrinde(btn.dataset.index));
+            });
+
+            document.querySelectorAll(".delete-btn").forEach(btn => {
+                btn.addEventListener("click", () => excluirBrinde(btn.dataset.index));
+            });
+        }
+
+        // Adicionar ou atualizar brinde
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+
+            const novoBrinde = {
+                nome: document.getElementById("nomeBrinde").value.trim(),
+                descricao: document.getElementById("descricaoBrinde").value.trim(),
+                quantidade: parseInt(document.getElementById("quantidadeBrinde").value) || 0
+            };
+
+            if (editIndex >= 0) {
+                brindes[editIndex] = novoBrinde;
+                editIndex = -1;
+            } else {
+                brindes.push(novoBrinde);
+            }
+
+            localStorage.setItem("brindes", JSON.stringify(brindes));
+            atualizarTabela();
+            form.reset();
+        });
+
+        function editarBrinde(i) {
+            const brinde = brindes[i];
+            document.getElementById("nomeBrinde").value = brinde.nome;
+            document.getElementById("descricaoBrinde").value = brinde.descricao;
+            document.getElementById("quantidadeBrinde").value = brinde.quantidade;
+            editIndex = i;
+        }
+
+        function excluirBrinde(i) {
+            if (confirm("Deseja realmente excluir este brinde?")) {
+                brindes.splice(i, 1);
+                localStorage.setItem("brindes", JSON.stringify(brindes));
+                atualizarTabela();
+            }
+        }
+
+        atualizarTabela();
+    </script>
+</body>
+
+</html>

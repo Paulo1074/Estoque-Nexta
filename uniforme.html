@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Nexta - Uniformes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="img/nexta.jpg" alt="Logo Estoque Nexta" class="logo-img">
+                <h1>Estoque Nexta</h1>
+            </div>
+
+            <div class="nav">
+                <a href="index.html" class="btn-nav">Movimentações</a>
+                <a href="uniforme.html" class="btn-nav active">Uniformes</a>
+                <a href="Brindes.html" class="btn-nav">Brindes</a>
+                <a href="#" class="btn-nav">Limpar dados</a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header>
+                <h2>Cadastro de Uniformes</h2>
+            </header>
+
+            <section class="form-section">
+                <h3>Adicionar novo uniforme</h3>
+                <form id="uniformForm">
+                    <input type="text" id="nomeUniforme" placeholder="Nome do uniforme" required>
+                    <input type="text" id="descricaoUniforme" placeholder="Descrição (opcional)">
+                    <input type="text" id="remetenteUniforme" placeholder="Nome do remetente" required>
+
+                    <div class="sizes">
+                        <label>PP <input type="number" id="pp" min="0" value="0"></label>
+                        <label>P <input type="number" id="p" min="0" value="0"></label>
+                        <label>M <input type="number" id="m" min="0" value="0"></label>
+                        <label>G <input type="number" id="g" min="0" value="0"></label>
+                        <label>GG <input type="number" id="gg" min="0" value="0"></label>
+                        <label>XG <input type="number" id="xg" min="0" value="0"></label>
+                        <label>XXG <input type="number" id="xxg" min="0" value="0"></label>
+                    </div>
+
+                    <button type="submit" class="btn primary">Salvar uniforme</button>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <h3>Uniformes cadastrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Uniforme</th>
+                            <th>Descrição</th>
+                            <th>Remetente</th>
+                            <th>PP</th>
+                            <th>P</th>
+                            <th>M</th>
+                            <th>G</th>
+                            <th>GG</th>
+                            <th>XG</th>
+                            <th>XXG</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaUniformes"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById("uniformForm");
+        const tabela = document.getElementById("tabelaUniformes");
+
+        let uniformes = JSON.parse(localStorage.getItem("uniformes")) || [];
+        let editIndex = -1;
+
+        function atualizarTabela() {
+            tabela.innerHTML = "";
+
+            uniformes.forEach((uni, index) => {
+                const total = uni.pp + uni.p + uni.m + uni.g + uni.gg + uni.xg + uni.xxg;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${uni.nome}</td>
+                    <td>${uni.descricao || '-'}</td>
+                    <td>${uni.remetente || '-'}</td>
+                    <td>${uni.pp}</td>
+                    <td>${uni.p}</td>
+                    <td>${uni.m}</td>
+                    <td>${uni.g}</td>
+                    <td>${uni.gg}</td>
+                    <td>${uni.xg}</td>
+                    <td>${uni.xxg}</td>
+                    <td><strong>${total}</strong></td>
+                    <td>
+                        <button class="edit-btn" data-index="${index}">Editar</button>
+                        <button class="delete-btn" data-index="${index}">Excluir</button>
+                    </td>
+                `;
+                tabela.appendChild(tr);
+            });
+
+            // Eventos dos botões
+            document.querySelectorAll(".edit-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const i = btn.dataset.index;
+                    editarUniforme(i);
+                });
+            });
+
+            document.querySelectorAll(".delete-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const i = btn.dataset.index;
+                    excluirUniforme(i);
+                });
+            });
+        }
+
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+
+            const novoUniforme = {
+                nome: document.getElementById("nomeUniforme").value.trim(),
+                descricao: document.getElementById("descricaoUniforme").value.trim(),
+                remetente: document.getElementById("remetenteUniforme").value.trim(),
+                pp: parseInt(document.getElementById("pp").value) || 0,
+                p: parseInt(document.getElementById("p").value) || 0,
+                m: parseInt(document.getElementById("m").value) || 0,
+                g: parseInt(document.getElementById("g").value) || 0,
+                gg: parseInt(document.getElementById("gg").value) || 0,
+                xg: parseInt(document.getElementById("xg").value) || 0,
+                xxg: parseInt(document.getElementById("xxg").value) || 0,
+            };
+
+            if (editIndex >= 0) {
+                uniformes[editIndex] = novoUniforme;
+                editIndex = -1;
+            } else {
+                uniformes.push(novoUniforme);
+            }
+
+            localStorage.setItem("uniformes", JSON.stringify(uniformes));
+            atualizarTabela();
+            form.reset();
+        });
+
+        function editarUniforme(i) {
+            const uni = uniformes[i];
+            document.getElementById("nomeUniforme").value = uni.nome;
+            document.getElementById("descricaoUniforme").value = uni.descricao;
+            document.getElementById("remetenteUniforme").value = uni.remetente;
+            document.getElementById("pp").value = uni.pp;
+            document.getElementById("p").value = uni.p;
+            document.getElementById("m").value = uni.m;
+            document.getElementById("g").value = uni.g;
+            document.getElementById("gg").value = uni.gg;
+            document.getElementById("xg").value = uni.xg;
+            document.getElementById("xxg").value = uni.xxg;
+
+            editIndex = i;
+        }
+
+        function excluirUniforme(i) {
+            if (confirm("Deseja realmente excluir este uniforme?")) {
+                uniformes.splice(i, 1);
+                localStorage.setItem("uniformes", JSON.stringify(uniformes));
+                atualizarTabela();
+            }
+        }
+
+        atualizarTabela();
+    </script>
+</body>
+</html>
