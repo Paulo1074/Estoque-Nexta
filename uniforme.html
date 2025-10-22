@@ -19,8 +19,9 @@
             <div class="nav">
                 <a href="index.html" class="btn-nav">Movimentações</a>
                 <a href="uniforme.html" class="btn-nav active">Uniformes</a>
-                <a href="Brindes.html" class="btn-nav">Brindes</a>
-                <a href="#" class="btn-nav">Limpar dados</a>
+                <a href="Brindes.html" class="btn-nav">Materiais Marketing</a>
+                <a href="EstoqueRoupas.html" class="btn-nav">Estoque Roupas</a>
+                <a href="EstoqueMkt.html" class="btn-nav">Estoque Materiais</a>
             </div>
         </aside>
 
@@ -32,9 +33,32 @@
             <section class="form-section">
                 <h3>Adicionar novo uniforme</h3>
                 <form id="uniformForm">
-                    <input type="text" id="nomeUniforme" placeholder="Nome do uniforme" required>
+                    <!-- Agora é um select para escolher o uniforme -->
+                    <select id="nomeUniforme" required>
+                        <option value="">Selecione o uniforme</option>
+                        <option value="Camisa Polo">Camisa Polo</option>
+                        <option value="Camisa Social">Camisa Social</option>
+                        <option value="Calça">Calça</option>
+                        <option value="Jaqueta">Jaqueta</option>
+                        <option value="Boné">Boné</option>
+                    </select>
+
                     <input type="text" id="descricaoUniforme" placeholder="Descrição (opcional)">
-                    <input type="text" id="remetenteUniforme" placeholder="Nome do remetente" required>
+                    <input type="text" id="remetenteUniforme" placeholder="Nome do Destinatário" required>
+                    <input type="text" id="originUniforme" placeholder="Cidade de Origem (opcional)">
+                    <input type="text" id="destinationUniforme" placeholder="Cidade de Destino (opcional)">
+                    <input type="number" id="quantidadeMovimentada" placeholder="Qnt mov" min="0" value="0">
+                    <input type="number" id="quantidadeFinal" placeholder="Qnt final" min="0" value="0">
+                    <input type="text" id="custoUnitarioUniforme" placeholder="Custo unit">
+                    <input type="text" id="custoTotalUniforme" placeholder="Custo total">
+
+                    <div id="totalGeral" style="margin-top: 10px; font-weight: bold;"></div>
+
+
+                    <select id="tipoUniforme" required>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
 
                     <div class="sizes">
                         <label>PP <input type="number" id="pp" min="0" value="0"></label>
@@ -47,6 +71,7 @@
                     </div>
 
                     <button type="submit" class="btn primary">Salvar uniforme</button>
+                    <button type="button" onclick="limparUniformes()" class="btn danger">Limpar Todos</button>
                 </form>
             </section>
 
@@ -58,6 +83,7 @@
                             <th>Uniforme</th>
                             <th>Descrição</th>
                             <th>Remetente</th>
+                            <th>Tipo</th>
                             <th>PP</th>
                             <th>P</th>
                             <th>M</th>
@@ -78,60 +104,115 @@
     <script>
         const form = document.getElementById("uniformForm");
         const tabela = document.getElementById("tabelaUniformes");
+        const btnSalvar = form.querySelector("button[type='submit']");
+        const selectUniforme = document.getElementById("nomeUniforme");
 
         let uniformes = JSON.parse(localStorage.getItem("uniformes")) || [];
         let editIndex = -1;
 
+        // Preços unitários
+        const precosUniformes = {
+            "Camisa Polo": 88.90,
+            "Camisa Social": 107.80,
+            "Calça": 94.60,
+            "Jaqueta": 225.00,
+            "Boné": 38.00,
+        };
+
+        // Atualiza tabela
         function atualizarTabela() {
             tabela.innerHTML = "";
-
             uniformes.forEach((uni, index) => {
                 const total = uni.pp + uni.p + uni.m + uni.g + uni.gg + uni.xg + uni.xxg;
-
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td>${uni.nome}</td>
-                    <td>${uni.descricao || '-'}</td>
-                    <td>${uni.remetente || '-'}</td>
-                    <td>${uni.pp}</td>
-                    <td>${uni.p}</td>
-                    <td>${uni.m}</td>
-                    <td>${uni.g}</td>
-                    <td>${uni.gg}</td>
-                    <td>${uni.xg}</td>
-                    <td>${uni.xxg}</td>
-                    <td><strong>${total}</strong></td>
-                    <td>
-                        <button class="edit-btn" data-index="${index}">Editar</button>
-                        <button class="delete-btn" data-index="${index}">Excluir</button>
-                    </td>
-                `;
+      <td>${uni.nome}</td>
+      <td>${uni.descricao || '-'}</td>
+      <td>${uni.remetente || '-'}</td>
+      <td>${uni.tipo || '-'}</td>
+      <td>${uni.pp}</td>
+      <td>${uni.p}</td>
+      <td>${uni.m}</td>
+      <td>${uni.g}</td>
+      <td>${uni.gg}</td>
+      <td>${uni.xg}</td>
+      <td>${uni.xxg}</td>
+      <td><strong>${total}</strong></td>
+      <td>
+        <button class="edit-btn" data-index="${index}">Editar</button>
+        <button class="delete-btn" data-index="${index}">Excluir</button>
+      </td>
+    `;
                 tabela.appendChild(tr);
             });
 
-            // Eventos dos botões
             document.querySelectorAll(".edit-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const i = btn.dataset.index;
-                    editarUniforme(i);
-                });
+                btn.addEventListener("click", () => editarUniforme(btn.dataset.index));
             });
 
             document.querySelectorAll(".delete-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const i = btn.dataset.index;
-                    excluirUniforme(i);
-                });
+                btn.addEventListener("click", () => excluirUniforme(btn.dataset.index));
             });
         }
 
+        // Atualiza custo ao mudar quantidade ou uniforme
+        function atualizarCusto() {
+            const precoUnitario = precosUniformes[selectUniforme.value] || 0;
+
+            // soma todas as quantidades
+            const totalQuantidade =
+                (parseInt(document.getElementById("pp").value) || 0) +
+                (parseInt(document.getElementById("p").value) || 0) +
+                (parseInt(document.getElementById("m").value) || 0) +
+                (parseInt(document.getElementById("g").value) || 0) +
+                (parseInt(document.getElementById("gg").value) || 0) +
+                (parseInt(document.getElementById("xg").value) || 0) +
+                (parseInt(document.getElementById("xxg").value) || 0);
+
+            document.getElementById("custoUnitarioUniforme").value = precoUnitario.toFixed(2);
+            document.getElementById("custoTotalUniforme").value = (precoUnitario * totalQuantidade).toFixed(2);
+        }
+
+        selectUniforme.addEventListener("change", atualizarCusto);
+        document.getElementById("pp").addEventListener("input", atualizarCusto);
+        document.getElementById("p").addEventListener("input", atualizarCusto);
+        document.getElementById("m").addEventListener("input", atualizarCusto);
+        document.getElementById("g").addEventListener("input", atualizarCusto);
+        document.getElementById("gg").addEventListener("input", atualizarCusto);
+        document.getElementById("xg").addEventListener("input", atualizarCusto);
+        document.getElementById("xxg").addEventListener("input", atualizarCusto);
+
+        // Submit do formulário
         form.addEventListener("submit", e => {
             e.preventDefault();
+            const nome = selectUniforme.value;
+            const remetente = document.getElementById("remetenteUniforme").value.trim();
+            const tipo = document.getElementById("tipoUniforme").value;
+
+            if (!nome || !remetente || !tipo) {
+                alert("Preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            const totalMovimentado =
+                (parseInt(document.getElementById("pp").value) || 0) +
+                (parseInt(document.getElementById("p").value) || 0) +
+                (parseInt(document.getElementById("m").value) || 0) +
+                (parseInt(document.getElementById("g").value) || 0) +
+                (parseInt(document.getElementById("gg").value) || 0) +
+                (parseInt(document.getElementById("xg").value) || 0) +
+                (parseInt(document.getElementById("xxg").value) || 0);
+
+            const custoUnitario = parseFloat(document.getElementById("custoUnitarioUniforme").value) || 0;
+            const custoTotal = parseFloat(document.getElementById("custoTotalUniforme").value) || 0;
 
             const novoUniforme = {
-                nome: document.getElementById("nomeUniforme").value.trim(),
+                nome,
                 descricao: document.getElementById("descricaoUniforme").value.trim(),
-                remetente: document.getElementById("remetenteUniforme").value.trim(),
+                remetente,
+                origin: document.getElementById("originUniforme").value.trim(),
+                destination: document.getElementById("destinationUniforme").value.trim(),
+                tipo,
                 pp: parseInt(document.getElementById("pp").value) || 0,
                 p: parseInt(document.getElementById("p").value) || 0,
                 m: parseInt(document.getElementById("m").value) || 0,
@@ -139,13 +220,21 @@
                 gg: parseInt(document.getElementById("gg").value) || 0,
                 xg: parseInt(document.getElementById("xg").value) || 0,
                 xxg: parseInt(document.getElementById("xxg").value) || 0,
+                quantidadeMovimentada: totalMovimentado,
+                quantidadeFinal: totalMovimentado,
+                custoUnitario,
+                custoTotal,
+                dateTime: new Date().toLocaleString(),
+                timestamp: Date.now()
             };
 
             if (editIndex >= 0) {
+                novoUniforme.timestamp = uniformes[editIndex].timestamp || Date.now();
                 uniformes[editIndex] = novoUniforme;
                 editIndex = -1;
+                btnSalvar.textContent = "Salvar uniforme";
             } else {
-                uniformes.push(novoUniforme);
+                uniformes = [novoUniforme, ...uniformes];
             }
 
             localStorage.setItem("uniformes", JSON.stringify(uniformes));
@@ -155,9 +244,12 @@
 
         function editarUniforme(i) {
             const uni = uniformes[i];
-            document.getElementById("nomeUniforme").value = uni.nome;
+            selectUniforme.value = uni.nome;
             document.getElementById("descricaoUniforme").value = uni.descricao;
             document.getElementById("remetenteUniforme").value = uni.remetente;
+            document.getElementById("originUniforme").value = uni.origin;
+            document.getElementById("destinationUniforme").value = uni.destination;
+            document.getElementById("tipoUniforme").value = uni.tipo;
             document.getElementById("pp").value = uni.pp;
             document.getElementById("p").value = uni.p;
             document.getElementById("m").value = uni.m;
@@ -165,7 +257,10 @@
             document.getElementById("gg").value = uni.gg;
             document.getElementById("xg").value = uni.xg;
             document.getElementById("xxg").value = uni.xxg;
-
+            document.getElementById("quantidadeMovimentada").value = uni.quantidadeMovimentada;
+            document.getElementById("quantidadeFinal").value = uni.quantidadeFinal;
+            document.getElementById("custoUnitarioUniforme").value = uni.custoUnitario;
+            document.getElementById("custoTotalUniforme").value = uni.custoTotal;
             editIndex = i;
         }
 
@@ -177,7 +272,17 @@
             }
         }
 
+        function limparUniformes() {
+            if (confirm("Deseja realmente limpar todos os uniformes?")) {
+                uniformes = [];
+                localStorage.removeItem("uniformes");
+                atualizarTabela();
+            }
+        }
+
         atualizarTabela();
     </script>
+
 </body>
+
 </html>

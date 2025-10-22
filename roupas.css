@@ -1,0 +1,404 @@
+/* ===== VARIÁVEIS GLOBAIS ===== */
+:root {
+    --bg: #f4f6f8;      /* Cor de fundo da página */
+    --accent: #0b74de;  /* Cor de destaque / botões ativos */
+    --card: #ffffff;     /* Cor de cartões, formulários e modais */
+    --muted: #6b7280;    /* Cor secundária / texto menos importante */
+    --danger: #002fff;   /* Cor de ação de perigo (editar/excluir) */
+}
+
+/* ===== RESET ===== */
+* {
+    box-sizing: border-box;           /* Inclui padding e border no tamanho total do elemento */
+    font-family: "Inter", system-ui, sans-serif; /* Fonte padrão */
+    margin: 0;                        /* Remove margens padrões */
+    padding: 0;                       /* Remove paddings padrões */
+}
+
+html, body {
+    width: 100%;                      /* Largura total */
+    height: 100%;                     /* Altura total */
+    background: var(--bg);            /* Cor de fundo padrão */
+}
+
+/* ===== ESTRUTURA PRINCIPAL ===== */
+.app {
+    display: flex;                     /* Layout flexível horizontal */
+    width: 100%;                       
+    min-height: 100vh;                 /* Altura mínima igual à tela */
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 260px;                      /* Largura fixa da sidebar */
+    background-color: #222;            /* Cor de fundo escura */
+    color: #fff;                       /* Cor do texto */
+    height: 100vh;                     /* Altura total da tela */
+    position: fixed;                   /* Fixa a sidebar na tela */
+    top: 0;
+    left: 0;
+    overflow-y: auto;                  /* Scroll vertical se necessário */
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 2rem;
+}
+
+.logo-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;                 /* Ajusta a imagem sem distorção */
+}
+
+.logo h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;                         /* Espaçamento entre botões */
+}
+
+.btn-nav {
+    display: block;
+    width: 180px;
+    padding: 10px 15px;
+    background: #34495e;               /* Cor padrão do botão */
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    text-align: center;
+    transition: background 0.2s;
+    margin: 4px auto;
+}
+
+.btn-nav:hover {
+    background: #3f5871;               /* Cor ao passar o mouse */
+}
+
+.btn-nav.active {
+    background: var(--accent);         /* Botão ativo */
+}
+
+/* ===== CONTEÚDO PRINCIPAL ===== */
+.main-content {
+    flex: 1;                            /* Ocupa o restante da tela */
+    margin-left: 260px;                 /* Espaço para a sidebar */
+    padding: 20px;
+    width: calc(100% - 260px);          /* Ajusta largura considerando sidebar */
+    background: var(--bg);
+}
+
+/* ===== FORMULÁRIOS ===== */
+form#formEstoque input,
+form#formEstoque select {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background-color: var(--card);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+form#formEstoque input:focus,
+form#formEstoque select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(11,116,222,0.4);
+    outline: none;                     /* Remove contorno padrão */
+}
+
+/* ===== CAMPOS DE TAMANHO ===== */
+.tamanho-com-botao {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.sizes {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;                   /* Scroll horizontal se muitos tamanhos */
+}
+
+.sizes label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.sizes input[type="number"] {
+    width: 60px;
+    padding: 6px;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: var(--card);
+}
+
+/* Remove os botões de incremento padrão do number */
+.sizes input[type=number]::-webkit-inner-spin-button,
+.sizes input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.sizes input[type=number] {
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
+}
+
+/* ===== BOTÃO ADICIONAR ===== */
+.botao-adicionar-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.botao-adicionar-container button {
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.botao-adicionar-container button:hover {
+    background-color: #095ab5;
+    transform: translateY(-2px);
+}
+
+/* ===== TABELA ===== */
+#tabelaEstoque {
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+#tabelaEstoque th {
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px 15px;
+    text-transform: uppercase;
+}
+
+#tabelaEstoque td {
+    background-color: var(--card);
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+/* Botão de editar */
+#tabelaEstoque .btn-editar {
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+#tabelaEstoque .btn-editar:hover {
+    background-color: #002fff;
+}
+
+/* Botão de excluir */
+#tabelaEstoque .btn-excluir {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+#tabelaEstoque .btn-excluir:hover {
+    background-color: #c0392b;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px 25px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal h3 {
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.modal-sizes label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.modal-sizes input {
+    width: 70px;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+/* Botões modal */
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.salvar-btn {
+    background: var(--accent);
+    color: #fff;
+}
+
+.salvar-btn:hover {
+    background: #002fff;
+    transform: translateY(-2px);
+}
+
+.cancelar-btn {
+    background: #ccc;
+    color: #333;
+}
+
+.cancelar-btn:hover {
+    background: #aaa;
+    transform: translateY(-2px);
+}
+
+/* ===== FILTRO ===== */
+.filtro-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filtro-container input {
+    width: 260px;
+    max-width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: var(--card);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.filtro-container input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(11,116,222,0.4);
+    outline: none;
+}
+
+.filtro-container button {
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.filtro-container button:hover {
+    background-color: #095ab5;
+    transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+    }
+
+    .tamanho-com-botao {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sizes {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .botao-adicionar-container {
+        justify-content: center;
+    }
+
+    .filtro-container {
+        justify-content: center;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filtro-container input,
+    .filtro-container button {
+        width: 100%;
+    }
+}
+

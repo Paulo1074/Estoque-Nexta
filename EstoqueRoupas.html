@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Estoque de Roupas</title>
+    <link rel="stylesheet" href="roupas.css">
+</head>
+
+<body>
+    <button id="toggle-sidebar" class="hamburger">☰</button>
+
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="img/nexta.jpg" alt="Logo Estoque Nexta" class="logo-img">
+                <h1>Estoque Nexta</h1>
+            </div>
+
+            <div class="nav">
+                <a href="index.html" class="btn-nav">Movimentações</a>
+                <a href="uniforme.html" class="btn-nav">Uniformes</a>
+                <a href="Brindes.html" class="btn-nav">Materiais Marketing</a>
+                <a href="EstoqueRoupas.html" class="btn-nav active">Estoque Roupas</a>
+                <a href="EstoqueMkt.html" class="btn-nav">Estoque Materiais</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h2>Estoque de Roupas</h2>
+
+            <div class="container">
+                <!-- 🔹 Filtro de busca -->
+                <div class="filtro-container">
+                    <input type="text" id="buscaProduto" placeholder="Buscar produto ou categoria...">
+                </div>
+
+                <!-- 🔹 Formulário -->
+                <form id="formEstoque">
+                    <input type="text" id="produto" placeholder="Nome do produto" required>
+                    <select id="categoria" required>
+                        <option value="">Selecione a categoria</option>
+                        <option value="Camisa Polo">Camisa Polo</option>
+                        <option value="Camisa Social">Camisa Social</option>
+                        <option value="Calça">Calça</option>
+                        <option value="Jaqueta">Jaqueta</option>
+                        <option value="Boné">Boné</option>
+                    </select>
+
+                    <div class="tamanho-com-botao">
+                        <div class="sizes">
+                            <label><span>PP</span><input type="number" id="pp" min="0" value="0"></label>
+                            <label><span>P</span><input type="number" id="p" min="0" value="0"></label>
+                            <label><span>M</span><input type="number" id="m" min="0" value="0"></label>
+                            <label><span>G</span><input type="number" id="g" min="0" value="0"></label>
+                            <label><span>GG</span><input type="number" id="gg" min="0" value="0"></label>
+                            <label><span>XG</span><input type="number" id="xg" min="0" value="0"></label>
+                            <label><span>XXG</span><input type="number" id="xxg" min="0" value="0"></label>
+                        </div>
+                    </div>
+
+                    <div class="botao-adicionar-container">
+                        <button type="submit">Adicionar</button>
+                    </div>
+                </form>
+
+                <!-- 🔹 Tabela de estoque -->
+                <table id="tabelaEstoque">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>PP</th>
+                            <th>P</th>
+                            <th>M</th>
+                            <th>G</th>
+                            <th>GG</th>
+                            <th>XG</th>
+                            <th>XXG</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div class="modal-overlay" id="modalEditar">
+        <div class="modal modal-preta">
+            <h3>Atualizar Quantidades</h3>
+            <div class="modal-sizes" id="modalSizes"></div>
+            <div class="modal-buttons">
+                <button class="cancelar-btn" id="btnCancelar">Cancelar</button>
+                <button class="salvar-btn" id="btnSalvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('formEstoque');
+        const tabela = document.getElementById('tabelaEstoque').querySelector('tbody');
+        const buscaInput = document.getElementById('buscaProduto');
+        const tamanhos = ['pp', 'p', 'm', 'g', 'gg', 'xg', 'xxg'];
+        let estoque = {};
+
+        function salvarLocalStorage() {
+            localStorage.setItem('estoqueRoupas', JSON.stringify(estoque));
+        }
+
+        function carregarLocalStorage() {
+            const dados = localStorage.getItem('estoqueRoupas');
+            if (!dados) return;
+            estoque = JSON.parse(dados);
+            Object.values(estoque).forEach(item => criarLinhaTabela(item));
+        }
+
+        function calcularTotal(quantidades) {
+            return tamanhos.reduce((soma, t) => soma + (quantidades[t] || 0), 0);
+        }
+
+        function criarLinhaTabela(item) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.produto}</td>
+                <td>${item.categoria}</td>
+                ${tamanhos.map(t => `<td data-tamanho="${t}">${item.quantidades[t]}</td>`).join('')}
+                <td class="total">${calcularTotal(item.quantidades)}</td>
+                <td>
+                    <button class="btn-editar">Editar</button>
+                    <button class="btn-excluir">Excluir</button>
+                </td>
+            `;
+            tabela.appendChild(tr);
+            item.linha = tr;
+
+            // Excluir
+            tr.querySelector('.btn-excluir').addEventListener('click', () => {
+                if (confirm(`Deseja realmente excluir o produto "${item.produto}"?`)) {
+                    tr.remove();
+                    delete estoque[`${item.produto.toLowerCase()}_${item.categoria.toLowerCase()}`];
+                    salvarLocalStorage();
+                }
+            });
+
+            // Editar com modal
+            tr.querySelector('.btn-editar').addEventListener('click', () => {
+                const modal = document.getElementById('modalEditar');
+                const modalSizes = document.getElementById('modalSizes');
+                const btnSalvar = document.getElementById('btnSalvar');
+                const btnCancelar = document.getElementById('btnCancelar');
+
+                modalSizes.innerHTML = '';
+
+                tamanhos.forEach(t => {
+                    const label = document.createElement('label');
+                    label.innerHTML = `<span>${t.toUpperCase()}</span>
+                        <input type="number" min="0" value="${item.quantidades[t]}" data-tamanho="${t}">`;
+                    modalSizes.appendChild(label);
+                });
+
+                modal.style.display = 'flex';
+
+                btnCancelar.onclick = () => modal.style.display = 'none';
+                btnSalvar.onclick = () => {
+                    const inputs = modal.querySelectorAll('input[type="number"]');
+                    inputs.forEach(input => {
+                        const t = input.dataset.tamanho;
+                        item.quantidades[t] = parseInt(input.value, 10) || 0;
+                        tr.querySelector(`td[data-tamanho="${t}"]`).textContent = item.quantidades[t];
+                    });
+                    // Atualiza total
+                    tr.querySelector('.total').textContent = calcularTotal(item.quantidades);
+                    salvarLocalStorage();
+                    modal.style.display = 'none';
+                };
+            });
+        }
+
+        // Adicionar produto
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const produto = document.getElementById('produto').value.trim();
+            const categoria = document.getElementById('categoria').value;
+            const quantidades = {};
+            let total = 0;
+            tamanhos.forEach(t => {
+                const val = parseInt(document.getElementById(t).value, 10) || 0;
+                quantidades[t] = val;
+                total += val;
+            });
+
+            if (!produto || !categoria || total === 0) {
+                alert('Preencha o produto, categoria e pelo menos uma quantidade.');
+                return;
+            }
+
+            const chave = `${produto.toLowerCase()}_${categoria.toLowerCase()}`;
+            if (estoque[chave]) {
+                tamanhos.forEach(t => {
+                    estoque[chave].quantidades[t] += quantidades[t];
+                    estoque[chave].linha.querySelector(`td[data-tamanho="${t}"]`).textContent = estoque[chave].quantidades[t];
+                });
+                estoque[chave].linha.querySelector('.total').textContent = calcularTotal(estoque[chave].quantidades);
+            } else {
+                const item = { produto, categoria, quantidades };
+                estoque[chave] = item;
+                criarLinhaTabela(item);
+            }
+
+            form.reset();
+            filtrarTabela();
+            salvarLocalStorage();
+        });
+
+        // Filtro
+        buscaInput.addEventListener('input', filtrarTabela);
+        function filtrarTabela() {
+            const filtro = buscaInput.value.toLowerCase();
+            Object.values(estoque).forEach(item => {
+                const produto = item.linha.cells[0].textContent.toLowerCase();
+                const categoria = item.linha.cells[1].textContent.toLowerCase();
+                item.linha.style.display = (produto.includes(filtro) || categoria.includes(filtro)) ? '' : 'none';
+            });
+        }
+
+        // Ordenar
+        const tabelaHead = document.querySelector('#tabelaEstoque thead');
+        let ordemCrescente = true;
+        tabelaHead.addEventListener('click', function (e) {
+            const th = e.target.closest('th');
+            if (!th || th.textContent === 'Ações') return;
+
+            const index = Array.from(th.parentNode.children).indexOf(th);
+            const linhasArray = Array.from(tabela.rows);
+
+            linhasArray.sort((a, b) => {
+                let aText = a.cells[index].textContent;
+                let bText = b.cells[index].textContent;
+                if (!isNaN(aText) && !isNaN(bText)) {
+                    aText = parseInt(aText, 10);
+                    bText = parseInt(bText, 10);
+                }
+                if (aText < bText) return ordemCrescente ? -1 : 1;
+                if (aText > bText) return ordemCrescente ? 1 : -1;
+                return 0;
+            });
+
+            linhasArray.forEach(linha => tabela.appendChild(linha));
+            ordemCrescente = !ordemCrescente;
+        });
+
+        carregarLocalStorage();
+    </script>
+</body>
+
+</html>

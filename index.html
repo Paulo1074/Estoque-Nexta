@@ -9,23 +9,21 @@
 </head>
 
 <body>
+    <button id="toggle-sidebar" class="hamburger">☰</button>
+
     <div class="app">
         <aside class="sidebar">
             <div class="logo">
                 <img src="img/nexta.jpg" alt="Logo Estoque Nexta" class="logo-img">
-                <h1>Estoque Nexta</h1>
+                <h1>Estoque NEXTA</h1>
             </div>
 
             <div class="nav">
                 <a href="index.html" class="btn-nav active">Movimentações</a>
                 <a href="uniforme.html" class="btn-nav">Uniformes</a>
-                <a href="Brindes.html" class="btn-nav">Brindes</a>
-                <a href="#" class="btn-nav" id="limpar-dados">Limpar dados</a>
-            </div>
-
-            <div class="sidebar-list">
-                <div class="small">Produtos cadastrados</div>
-                <div id="sidebar-products"></div>
+                <a href="Brindes.html" class="btn-nav">Materiais Marketing</a>
+                <a href="EstoqueRoupas.html" class="btn-nav">Estoque Roupas</a>
+                <a href="EstoqueMkt.html" class="btn-nav">Estoque Materiais</a>
             </div>
         </aside>
 
@@ -34,224 +32,125 @@
                 <h2>Movimentações de estoque</h2>
                 <div class="controls">
                     <input id="search" placeholder="Buscar descrição ou produto">
-                    <button class="btn primary" id="open-move">Nova movimentação</button>
-                    <button class="btn" id="open-product">Novo produto</button>
+                    <button class="btn danger" id="limpar-dados">Limpar dados</button>
                 </div>
             </header>
 
             <div class="grid">
                 <div class="panel">
                     <div class="panel-header">
-                        <div>
-                            <strong id="count-moves">0</strong>
-                            <div class="small">Movimentações registradas</div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data / Hora</th>
+                                        <th>Produto</th>
+                                        <th>Destinatário</th>
+                                        <th>Tipo</th>
+                                        <th>Qnt. mov.</th>
+                                        <th>Qnt. final</th>
+                                        <th>Custo unit.</th>
+                                        <th>Custo total</th>
+                                        <th>Descrição</th>
+                                        <th>Cidade de Origem</th>
+                                        <th>Cidade de Destino</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="moves-tbody"></tbody>
+                            </table>
                         </div>
-                        <div class="small">Saldo geral: <span id="total-stock">0</span> itens</div>
-                    </div>
-
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data / Hora</th>
-                                    <th>Produto</th>
-                                    <th>Entidade</th>
-                                    <th>Tipo</th>
-                                    <th>Qnt. mov.</th>
-                                    <th>Qnt. final</th>
-                                    <th>Custo unit.</th>
-                                    <th>Custo total</th>
-                                    <th>Descrição</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="moves-tbody"></tbody>
-                        </table>
                     </div>
                 </div>
-
-                <aside class="panel">
-                    <strong>Produtos</strong>
-                    <div class="small">Clique para ver/editar</div>
-                    <div id="products-list" class="product-list"></div>
-
-                    <hr>
-                    <div class="small">Resumo</div>
-                    <div>
-                        <div class="small">Produtos: <strong id="count-products">0</strong></div>
-                        <div class="small">Qtd total em estoque: <strong id="sum-qty">0</strong></div>
-                        <button class="btn" id="export-csv">Exportar CSV</button>
-                    </div>
-                </aside>
             </div>
-
-            <footer class="small">
-                Dados salvos localmente (localStorage). Nenhum servidor é usado.
-            </footer>
         </main>
-    </div>
-
-    <!-- Modal -->
-    <div id="modal-root">
-        <div id="modal-back"></div>
-        <div id="modal">
-            <div id="modal-content"></div>
-            <div class="modal-footer">
-                <button id="close-modal" class="btn">Fechar</button>
-            </div>
-        </div>
     </div>
 
     <script>
         const movesTbody = document.getElementById('moves-tbody');
-        const modalRoot = document.getElementById('modal-root');
-        const modalContent = document.getElementById('modal-content');
-        const closeModalBtn = document.getElementById('close-modal');
 
-        // Abre o modal
-        document.getElementById('open-move').addEventListener('click', () => {
-            modalContent.innerHTML = `
-                <h3>Nova Movimentação</h3>
-                <form id="moveForm">
-                    <input type="text" id="move-product" placeholder="Produto" required>
-                    <input type="number" id="move-quantity" placeholder="Quantidade" required>
-                    <select id="move-type">
-                        <option value="entrada">Entrada</option>
-                        <option value="saida">Saída</option>
-                    </select>
-                    <input type="text" id="move-sender" placeholder="Remetente">
-                    <textarea id="move-description" placeholder="Descrição (opcional)"></textarea>
-                    <button type="submit" class="btn primary">Salvar</button>
-                </form>
-            `;
-            modalRoot.style.display = 'flex';
-
-            // Evento do formulário do modal
-            document.getElementById('moveForm').addEventListener('submit', e => {
-                e.preventDefault();
-                salvarMovimentacao();
-                modalRoot.style.display = 'none';
-            });
-        });
-
-        // Fecha o modal
-        closeModalBtn.addEventListener('click', () => {
-            modalRoot.style.display = 'none';
-        });
-        document.getElementById('modal-back').addEventListener('click', () => {
-            modalRoot.style.display = 'none';
-        });
-
-        function salvarMovimentacao() {
-            const produto = document.getElementById('move-product').value;
-            const quantidade = parseInt(document.getElementById('move-quantity').value) || 0;
-            const tipo = document.getElementById('move-type').value;
-            const sender = document.getElementById('move-sender').value;
-            const descricao = document.getElementById('move-description').value;
-
-            const estoque = JSON.parse(localStorage.getItem('estoque')) || [];
-
-            const novaMov = {
-                name: produto,
-                quantity: quantidade,
-                type: tipo,
-                sender: sender,
-                description: descricao,
-                dateTime: new Date().toLocaleString()
-            };
-
-            estoque.push(novaMov);
-            localStorage.setItem('estoque', JSON.stringify(estoque));
-            carregarMovimentacoes();
-        }
-
+        // Função para carregar movimentações apenas de brindes e uniformes
         function carregarMovimentacoes() {
             movesTbody.innerHTML = '';
 
-            // Estoque
-            const estoque = JSON.parse(localStorage.getItem('estoque')) || [];
-            estoque.forEach(prod => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${prod.dateTime}</td>
-                    <td>${prod.name}</td>
-                    <td>${prod.sender || '-'}</td>
-                    <td>${prod.type}</td>
-                    <td>${prod.quantity}</td>
-                    <td>${prod.quantity}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>${prod.description || '-'}</td>
-                    <td></td>
-                `;
-                movesTbody.appendChild(tr);
-            });
-
-            // Uniformes
             const uniformes = JSON.parse(localStorage.getItem('uniformes')) || [];
-            uniformes.forEach(uni => {
-                const total = (uni.pp || 0) + (uni.p || 0) + (uni.m || 0) + (uni.g || 0) + (uni.gg || 0) + (uni.xg || 0) + (uni.xxg || 0);
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>-</td>
-                    <td>${uni.nome}</td>
-                    <td>${uni.remetente || '-'}</td>
-                    <td>Uniforme</td>
-                    <td>${total}</td>
-                    <td>${total}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>${uni.descricao || '-'}</td>
-                    <td></td>
-                `;
-                movesTbody.appendChild(tr);
-            });
-
-            // Brindes
             const brindes = JSON.parse(localStorage.getItem('brindes')) || [];
-            brindes.forEach(brinde => {
+
+            const todosRegistros = [...brindes, ...uniformes];
+            todosRegistros.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            todosRegistros.forEach(item => {
                 const tr = document.createElement('tr');
+                const tipo = (item.tipo || item.type || '').toLowerCase().trim();
+                if (tipo === 'entrada') tr.classList.add('row-entrada');
+                else if (tipo === 'saida') tr.classList.add('row-saida');
+
+                const dataStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : item.dateTime || '-';
+
                 tr.innerHTML = `
-                    <td>-</td>
-                    <td>${brinde.nome}</td>
-                    <td>-</td>
-                    <td>Brinde</td>
-                    <td>${brinde.quantidade || 0}</td>
-                    <td>${brinde.quantidade || 0}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>${brinde.descricao || '-'}</td>
-                    <td></td>
-                `;
+            <td>${dataStr}</td>
+            <td>${item.name || item.nome || '-'}</td>
+            <td>${item.sender || item.nomePessoa || item.remetente || '-'}</td>
+            <td>${item.type || item.tipo || 'Item'}</td>
+            <td>${item.quantidadeMovimentada || item.quantity || 0}</td>
+            <td>${item.quantidadeFinal || item.quantity || 0}</td>
+            <td>${item.custoUnitario || '-'}</td>
+            <td>${item.custoTotal || '-'}</td>
+            <td>${item.description || item.descricao || '-'}</td>
+            <td>${item.origin || item.origem || '-'}</td>
+            <td>${item.destination || item.destino || '-'}</td>
+        `;
                 movesTbody.appendChild(tr);
             });
-
-            atualizarResumo();
         }
 
-        function atualizarResumo() {
-            const totalMov = movesTbody.querySelectorAll('tr').length;
-            document.getElementById('count-moves').innerText = totalMov;
-
-            let totalStock = 0;
-            movesTbody.querySelectorAll('tr').forEach(tr => {
-                const qty = parseInt(tr.children[4].innerText) || 0;
-                totalStock += qty;
-            });
-            document.getElementById('total-stock').innerText = totalStock;
-        }
-
-        document.getElementById('limpar-dados').addEventListener('click', () => {
-            if (confirm("Deseja limpar todos os dados?")) {
-                localStorage.removeItem('estoque');
-                localStorage.removeItem('uniformes');
-                localStorage.removeItem('brindes');
+        // Atualiza automaticamente quando localStorage muda
+        window.addEventListener('storage', event => {
+            if (['uniformes', 'brindes'].includes(event.key)) {
                 carregarMovimentacoes();
             }
         });
 
+        // BOTÃO LIMPAR TODOS OS DADOS
+        document.getElementById('limpar-dados').addEventListener('click', () => {
+            if (confirm("Deseja realmente remover TODOS os dados de brindes e uniformes?")) {
+                localStorage.removeItem('brindes');
+                localStorage.removeItem('uniformes');
+                alert("Todos os dados foram removidos.");
+                carregarMovimentacoes();
+            }
+        });
+
+        // FILTRO DE BUSCA
+        const searchInput = document.getElementById('search');
+        searchInput.addEventListener('input', () => {
+            const filter = searchInput.value.toLowerCase();
+            const rows = movesTbody.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let match = false;
+                const searchableIndices = [1, 2, 8, 9, 10];
+                for (let index of searchableIndices) {
+                    if (cells[index] && cells[index].textContent.toLowerCase().includes(filter)) {
+                        match = true;
+                        break;
+                    }
+                }
+                rows[i].style.display = match ? '' : 'none';
+            }
+        });
+
+        // hamburger menu
+        const toggleBtn = document.getElementById('toggle-sidebar');
+        const sidebar = document.querySelector('.sidebar');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('closed');
+            toggleBtn.textContent = sidebar.classList.contains('closed') ? '☰' : '✖';
+        });
+
+        // Carrega ao abrir a página
         window.onload = carregarMovimentacoes;
     </script>
+
 </body>
 
 </html>

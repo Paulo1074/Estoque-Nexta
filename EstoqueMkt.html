@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Estoque de Brindes</title>
+    <link rel="stylesheet" href="roupas.css" />
+</head>
+
+<body>
+    <button id="toggle-sidebar" class="hamburger">☰</button>
+
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="img/nexta.jpg" alt="Logo Estoque Nexta" class="logo-img" />
+                <h1>Estoque Nexta</h1>
+            </div>
+
+            <div class="nav">
+                <a href="index.html" class="btn-nav">Movimentações</a>
+                <a href="uniforme.html" class="btn-nav">Uniformes</a>
+                <a href="Brindes.html" class="btn-nav active">Materiais Marketing</a>
+                <a href="EstoqueRoupas.html" class="btn-nav">Estoque Roupas</a>
+                <a href="EstoqueMkt.html" class="btn-nav">Estoque Materiais</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h2>Estoque de Brindes</h2>
+
+            <div class="container">
+                <!-- Filtro -->
+                <div class="filtro-container">
+                    <input type="text" id="buscaProduto" placeholder="Buscar brinde ou categoria..." />
+                </div>
+
+                <!-- Formulário -->
+                <form id="formEstoque">
+                    <input type="text" id="produto" placeholder="Nome do brinde" required />
+                    <select id="categoria" required>
+                        <option value="">Selecione a categoria</option>
+                        <option value="Boné Formula Única">Boné Formula Única</option>
+                        <option value="Chaveiro Formula Única">Chaveiro Formula Única</option>
+                        <option value="Odorizador Veicular">Odorizador Veicular</option>
+                        <option value="Copo Formula Única">Copo Formula Única</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+
+                    <input type="number" id="quantidade" placeholder="Quantidade" min="1" required />
+
+                    <div class="botao-adicionar-container">
+                        <button type="submit">Adicionar Brinde</button>
+                    </div>
+                </form>
+
+                <!-- Tabela -->
+                <table id="tabelaEstoque">
+                    <thead>
+                        <tr>
+                            <th>Brinde</th>
+                            <th>Categoria</th>
+                            <th>Quantidade</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de edição -->
+    <div class="modal-overlay" id="modalEditar" style="display:none;">
+        <div class="modal modal-preta">
+            <h3>Atualizar Quantidade</h3>
+            <label>Quantidade:
+                <input type="number" id="novaQtd" min="0" />
+            </label>
+            <div class="modal-buttons">
+                <button class="cancelar-btn" id="btnCancelar">Cancelar</button>
+                <button class="salvar-btn" id="btnSalvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("formEstoque");
+        const tabela = document.querySelector("#tabelaEstoque tbody");
+        const buscaInput = document.getElementById("buscaProduto");
+        let estoque = {};
+
+        function salvarLocalStorage() {
+            localStorage.setItem("estoqueBrindes", JSON.stringify(estoque));
+        }
+
+        function carregarLocalStorage() {
+            const dados = localStorage.getItem("estoqueBrindes");
+            if (!dados) return;
+            estoque = JSON.parse(dados);
+            Object.values(estoque).forEach(item => criarLinhaTabela(item));
+        }
+
+        function criarLinhaTabela(item) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${escapeHtml(item.produto)}</td>
+                <td>${escapeHtml(item.categoria)}</td>
+                <td class="quantidade">${item.quantidade}</td>
+                <td class="total">${item.quantidade}</td>
+                <td>
+                    <button class="btn-editar">Editar</button>
+                    <button class="btn-excluir">Excluir</button>
+                </td>
+            `;
+            tabela.appendChild(tr);
+            item.linha = tr;
+
+            // Excluir
+            tr.querySelector(".btn-excluir").addEventListener("click", () => {
+                if (confirm(`Deseja realmente excluir "${item.produto}"?`)) {
+                    tr.remove();
+                    delete estoque[item.chave];
+                    salvarLocalStorage();
+                }
+            });
+
+            // Editar
+            tr.querySelector(".btn-editar").addEventListener("click", () => {
+                const modal = document.getElementById("modalEditar");
+                const novaQtd = document.getElementById("novaQtd");
+                const btnSalvar = document.getElementById("btnSalvar");
+                const btnCancelar = document.getElementById("btnCancelar");
+
+                novaQtd.value = item.quantidade;
+                modal.style.display = "flex";
+
+                btnCancelar.onclick = () => modal.style.display = "none";
+
+                btnSalvar.onclick = () => {
+                    item.quantidade = parseInt(novaQtd.value, 10) || 0;
+                    item.linha.cells[2].textContent = item.quantidade;
+                    item.linha.cells[3].textContent = item.quantidade; // Atualiza total
+                    salvarLocalStorage();
+                    modal.style.display = "none";
+                };
+            });
+        }
+
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+
+            const produto = document.getElementById("produto").value.trim();
+            const categoria = document.getElementById("categoria").value;
+            const quantidade = parseInt(document.getElementById("quantidade").value, 10);
+
+            if (!produto || !categoria || quantidade <= 0) {
+                alert("Preencha todos os campos corretamente!");
+                return;
+            }
+
+            const chave = `${produto.toLowerCase()}_${categoria.toLowerCase()}`;
+            if (estoque[chave]) {
+                estoque[chave].quantidade += quantidade;
+                estoque[chave].linha.cells[2].textContent = estoque[chave].quantidade;
+                estoque[chave].linha.cells[3].textContent = estoque[chave].quantidade;
+            } else {
+                const item = { produto, categoria, quantidade, chave };
+                estoque[chave] = item;
+                criarLinhaTabela(item);
+            }
+
+            // Adicionar ao painel principal (sem timestamp)
+            const movimentacoes = JSON.parse(localStorage.getItem("movimentacoes") || "[]");
+            movimentacoes.push({
+                tipo: "brinde",
+                nome: produto,
+                categoria: categoria,
+                quantidade: quantidade
+            });
+            localStorage.setItem("movimentacoes", JSON.stringify(movimentacoes));
+
+            form.reset();
+            salvarLocalStorage();
+        });
+
+        buscaInput.addEventListener("input", () => {
+            const filtro = buscaInput.value.toLowerCase();
+            Object.values(estoque).forEach(item => {
+                const nome = item.produto.toLowerCase();
+                const categoria = item.categoria.toLowerCase();
+                item.linha.style.display = (nome.includes(filtro) || categoria.includes(filtro)) ? "" : "none";
+            });
+        });
+
+        function escapeHtml(str) {
+            if (typeof str !== "string") return str;
+            return str.replace(/[&<>"']/g, function (m) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+            });
+        }
+
+        carregarLocalStorage();
+    </script>
+</body>
+
+</html>

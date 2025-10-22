@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -19,34 +19,62 @@
             <div class="nav">
                 <a href="index.html" class="btn-nav">Movimentações</a>
                 <a href="uniforme.html" class="btn-nav">Uniformes</a>
-                <a href="Brindes.html" class="btn-nav active">Brindes</a>
-                <a href="#" class="btn-nav">Limpar dados</a>
+                <a href="Brindes.html" class="btn-nav active">Materiais Marketing</a>
+                <a href="EstoqueRoupas.html" class="btn-nav">Estoque Roupas</a>
+                <a href="EstoqueMkt.html" class="btn-nav">Estoque Materiais</a>
             </div>
         </aside>
 
         <main class="main">
             <header>
-                <h2>Cadastro de Brindes</h2>
+                <h2>Cadastro de Materiais</h2>
             </header>
 
             <section class="form-section">
-                <h3>Adicionar novo brinde</h3>
+                <h3>Adicionar novo Material</h3>
                 <form id="brindeForm">
-                    <input type="text" id="nomeBrinde" placeholder="Nome do brinde" required>
+                    <!-- Select de brinde -->
+                    <select id="nomeBrinde" required>
+                        <option value="">Selecione o Material</option>
+                        <option value="Boné Formula Única">Boné Formula Única</option>
+                        <option value="Chaveiro Formula Única">Chaveiro Formula Única</option>
+                        <option value="Odorizador Veicular">Odorizador Veicular</option>
+                        <option value="Copo Formula Única">Copo Formula Única</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+
+                    <input type="text" id="nomePessoa" placeholder="Destinatário" required>
                     <input type="text" id="descricaoBrinde" placeholder="Descrição (opcional)">
-                    <input type="number" id="quantidadeBrinde" placeholder="Quantidade" min="0" value="0" required>
+                    <input type="number" id="quantidadeBrinde" placeholder="Quantidade" min="" value="" required>
+                    <input type="text" id="origemBrinde" placeholder="Cidade de Origem">
+                    <input type="text" id="destinoBrinde" placeholder="Cidade de Destino">
+                    <input type="text" id="quantidadeMovimentada" placeholder="Qnt mov" readonly>
+                    <input type="text" id="quantidadeFinal" placeholder="Qnt final" readonly>
+                    <input type="text" id="CustoUnitario" placeholder="Custo unit" readonly>
+                    <input type="text" id="CustouTotal" placeholder="Custo total" readonly>
+
+                    <select id="tipoMovimento" required>
+                        <option value="">Tipo</option>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
                     <button type="submit" class="btn primary">Salvar brinde</button>
+                    <button type="button" onclick="limparBrindes()" class="btn danger">Limpar Todos</button>
                 </form>
             </section>
 
             <section class="list-section">
-                <h3>Brindes cadastrados</h3>
+                <h3>Material cadastrados</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>Brinde</th>
+                            <th>Destinatário</th>
                             <th>Descrição</th>
                             <th>Quantidade</th>
+                            <th>Tipo</th>
+                            <th>Origem</th>
+                            <th>Destino</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -63,14 +91,49 @@
         let brindes = JSON.parse(localStorage.getItem("brindes")) || [];
         let editIndex = -1;
 
+        // Mapeamento de custos por brinde
+        const custosPorBrinde = {
+            "Boné Formula Única": 21.00,
+            "Chaveiro Formula Única": 6.00,
+            "Odorizador Veicular": 2.00,
+            "Copo Formula Única": 3.50,
+            "Outro": 0
+        };
+
+        const brindeSelect = document.getElementById("nomeBrinde");
+        const quantidadeInput = document.getElementById("quantidadeBrinde");
+        const custoUnitInput = document.getElementById("CustoUnitario");
+        const custoTotalInput = document.getElementById("CustouTotal");
+        const qtdMovInput = document.getElementById("quantidadeMovimentada");
+        const qtdFinalInput = document.getElementById("quantidadeFinal");
+
+        function atualizarValores() {
+            const brinde = brindeSelect.value;
+            const custoUnit = custosPorBrinde[brinde] || 0;
+            const quantidade = parseInt(quantidadeInput.value) || 0;
+
+            custoUnitInput.value = custoUnit.toFixed(2);
+            const total = custoUnit * quantidade;
+            custoTotalInput.value = total.toFixed(2);
+            qtdMovInput.value = quantidade;
+            qtdFinalInput.value = quantidade;
+        }
+
+        brindeSelect.addEventListener("change", atualizarValores);
+        quantidadeInput.addEventListener("input", atualizarValores);
+
         function atualizarTabela() {
             tabela.innerHTML = "";
             brindes.forEach((brinde, index) => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${brinde.nome}</td>
+                    <td>${brinde.nomePessoa || "-"}</td>
                     <td>${brinde.descricao || "-"}</td>
-                    <td>${brinde.quantidade}</td>
+                    <td>${brinde.quantidade || 0}</td>
+                    <td>${brinde.tipo}</td>
+                    <td>${brinde.origem || '-'}</td>
+                    <td>${brinde.destino || '-'}</td>
                     <td>
                         <button class="edit-btn" data-index="${index}">Editar</button>
                         <button class="delete-btn" data-index="${index}">Excluir</button>
@@ -79,43 +142,72 @@
                 tabela.appendChild(tr);
             });
 
-            // Adiciona eventos aos botões
             document.querySelectorAll(".edit-btn").forEach(btn => {
                 btn.addEventListener("click", () => editarBrinde(btn.dataset.index));
             });
-
             document.querySelectorAll(".delete-btn").forEach(btn => {
                 btn.addEventListener("click", () => excluirBrinde(btn.dataset.index));
             });
         }
 
-        // Adicionar ou atualizar brinde
         form.addEventListener("submit", e => {
             e.preventDefault();
 
+            const nome = brindeSelect.value.trim();
+            const pessoa = document.getElementById("nomePessoa").value.trim();
+            const tipo = document.getElementById("tipoMovimento").value;
+
+            if (!nome || !pessoa || !tipo) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            const quantidade = parseInt(quantidadeInput.value) || 0;
+            const custoUnit = parseFloat(custoUnitInput.value) || 0;
+            const custoTotal = parseFloat(custoTotalInput.value) || 0;
+
             const novoBrinde = {
-                nome: document.getElementById("nomeBrinde").value.trim(),
+                nome,
+                nomePessoa: pessoa,
                 descricao: document.getElementById("descricaoBrinde").value.trim(),
-                quantidade: parseInt(document.getElementById("quantidadeBrinde").value) || 0
+                quantidade,
+                tipo,
+                origem: document.getElementById("origemBrinde").value.trim(),
+                destino: document.getElementById("destinoBrinde").value.trim(),
+                quantidadeMovimentada: quantidade,
+                quantidadeFinal: quantidade,
+                custoUnitario: custoUnit,
+                custoTotal: custoTotal,
+                timestamp: Date.now()
             };
 
             if (editIndex >= 0) {
+                novoBrinde.timestamp = brindes[editIndex].timestamp;
                 brindes[editIndex] = novoBrinde;
                 editIndex = -1;
             } else {
-                brindes.push(novoBrinde);
+                brindes = [novoBrinde, ...brindes];
             }
 
             localStorage.setItem("brindes", JSON.stringify(brindes));
             atualizarTabela();
             form.reset();
+            atualizarValores();
         });
 
         function editarBrinde(i) {
             const brinde = brindes[i];
-            document.getElementById("nomeBrinde").value = brinde.nome;
+            brindeSelect.value = brinde.nome;
+            document.getElementById("nomePessoa").value = brinde.nomePessoa;
             document.getElementById("descricaoBrinde").value = brinde.descricao;
-            document.getElementById("quantidadeBrinde").value = brinde.quantidade;
+            quantidadeInput.value = brinde.quantidade;
+            document.getElementById("tipoMovimento").value = brinde.tipo;
+            document.getElementById("origemBrinde").value = brinde.origem;
+            document.getElementById("destinoBrinde").value = brinde.destino;
+            qtdMovInput.value = brinde.quantidadeMovimentada;
+            qtdFinalInput.value = brinde.quantidadeFinal;
+            custoUnitInput.value = brinde.custoUnitario;
+            custoTotalInput.value = brinde.custoTotal;
             editIndex = i;
         }
 
@@ -127,8 +219,16 @@
             }
         }
 
+        function limparBrindes() {
+            if (confirm("Deseja realmente limpar todos os brindes?")) {
+                brindes = [];
+                localStorage.removeItem("brindes");
+                atualizarTabela();
+            }
+        }
+
         atualizarTabela();
     </script>
-</body>
 
+</body>
 </html>
