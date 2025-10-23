@@ -1,7 +1,7 @@
 /* ===== VARIÁVEIS GLOBAIS ===== */
 :root {
     --bg: #f4f6f8;      /* Cor de fundo da página */
-    --accent: #0b74de;  /* Cor de destaque / botões ativos */
+    --accent: #002fff;  /* Cor de destaque / botões ativos */
     --card: #ffffff;     /* Cor de cartões, formulários e modais */
     --muted: #6b7280;    /* Cor secundária / texto menos importante */
     --danger: #002fff;   /* Cor de ação de perigo (editar/excluir) */
@@ -67,14 +67,14 @@ html, body {
 .nav {
     display: flex;
     flex-direction: column;
-    gap: 10px;                         /* Espaçamento entre botões */
+    gap: 10px;                /* Espaçamento entre botões */
 }
 
 .btn-nav {
     display: block;
     width: 180px;
     padding: 10px 15px;
-    background: #34495e;               /* Cor padrão do botão */
+    background: #263b50;               /* Cor padrão do botão */
     color: #fff;
     text-decoration: none;
     border-radius: 8px;
@@ -84,7 +84,7 @@ html, body {
 }
 
 .btn-nav:hover {
-    background: #3f5871;               /* Cor ao passar o mouse */
+    background: #002fff;               /* Cor ao passar o mouse */
 }
 
 .btn-nav.active {

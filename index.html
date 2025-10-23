@@ -149,6 +149,18 @@
 
         // Carrega ao abrir a página
         window.onload = carregarMovimentacoes;
+
+        // Identifica qual página está aberta
+  const currentPage = window.location.pathname.split("/").pop();
+
+  // Marca automaticamente o botão correto como ativo
+  document.querySelectorAll(".btn-nav").forEach(link => {
+    if (link.getAttribute("href") === currentPage) {
+      link.classList.add("active");
+    } else {
+      link.classList.remove("active");
+    }
+  });
     </script>
 
 </body>
