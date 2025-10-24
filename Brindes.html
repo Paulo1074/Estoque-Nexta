@@ -84,6 +84,28 @@
         </main>
     </div>
 
+    <script type="module">
+        // === Firebase Imports ===
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF1nvUVl5mJZqc5oPHLeWbxrYX1tOzYuQ",
+            authDomain: "estoque-nexta.firebaseapp.com",
+            projectId: "estoque-nexta",
+            storageBucket: "estoque-nexta.appspot.com",
+            messagingSenderId: "1063142163386",
+            appId: "1:1063142163386:web:235a6dd699615d999c1383",
+            measurementId: "G-H5VKBEWWRW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const colRef = collection(db, "brindes");
+
+        // === Mantém todo o código existente intacto ===
+    </script>
+
     <script>
         const form = document.getElementById("brindeForm");
         const tabela = document.getElementById("tabelaBrindes");
@@ -91,7 +113,6 @@
         let brindes = JSON.parse(localStorage.getItem("brindes")) || [];
         let editIndex = -1;
 
-        // Mapeamento de custos por brinde
         const custosPorBrinde = {
             "Boné Formula Única": 21.00,
             "Chaveiro Formula Única": 6.00,
@@ -127,18 +148,18 @@
             brindes.forEach((brinde, index) => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td>${brinde.nome}</td>
-                    <td>${brinde.nomePessoa || "-"}</td>
-                    <td>${brinde.descricao || "-"}</td>
-                    <td>${brinde.quantidade || 0}</td>
-                    <td>${brinde.tipo}</td>
-                    <td>${brinde.origem || '-'}</td>
-                    <td>${brinde.destino || '-'}</td>
-                    <td>
-                        <button class="edit-btn" data-index="${index}">Editar</button>
-                        <button class="delete-btn" data-index="${index}">Excluir</button>
-                    </td>
-                `;
+                <td>${brinde.nome}</td>
+                <td>${brinde.nomePessoa || "-"}</td>
+                <td>${brinde.descricao || "-"}</td>
+                <td>${brinde.quantidade || 0}</td>
+                <td>${brinde.tipo}</td>
+                <td>${brinde.origem || '-'}</td>
+                <td>${brinde.destino || '-'}</td>
+                <td>
+                    <button class="edit-btn" data-index="${index}">Editar</button>
+                    <button class="delete-btn" data-index="${index}">Excluir</button>
+                </td>
+            `;
                 tabela.appendChild(tr);
             });
 
@@ -150,7 +171,7 @@
             });
         }
 
-        form.addEventListener("submit", e => {
+        form.addEventListener("submit", async e => {
             e.preventDefault();
 
             const nome = brindeSelect.value.trim();
@@ -193,6 +214,14 @@
             atualizarTabela();
             form.reset();
             atualizarValores();
+
+            // === Adiciona ao Firestore ===
+            import("https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js").then(({ addDoc }) => {
+                addDoc(colRef, {
+                    ...novoBrinde,
+                    timestamp: serverTimestamp()
+                });
+            });
         });
 
         function editarBrinde(i) {
@@ -228,19 +257,20 @@
         }
 
         atualizarTabela();
-  
-  // Identifica qual página está aberta
-  const currentPage = window.location.pathname.split("/").pop();
 
-  // Marca automaticamente o botão correto como ativo
-  document.querySelectorAll(".btn-nav").forEach(link => {
-    if (link.getAttribute("href") === currentPage) {
-      link.classList.add("active");
-    } else {
-      link.classList.remove("active");
-    }
-  });
+        const currentPage = window.location.pathname.split("/").pop();
+        document.querySelectorAll(".btn-nav").forEach(link => {
+            if (link.getAttribute("href") === currentPage) link.classList.add("active");
+            else link.classList.remove("active");
+        });
+
+        // === Adiciona onSnapshot para atualização em tempo real ===
+        onSnapshot(colRef, (snapshot) => {
+            brindes = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            atualizarTabela();
+        });
     </script>
 
 </body>
+
 </html>

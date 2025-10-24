@@ -36,6 +36,19 @@
                 </div>
             </header>
 
+            <!-- Filtro compacto de data -->
+            <div class="filtro-container">
+                <label for="filtroData"></label>
+                <div class="filtro-inputs">
+                    <input type="datetime-local" id="filtroData">
+                    <button onclick="filtrarPorData()" class="btn-filtrar">Filtrar</button>
+                    <button onclick="limparFiltroData()" class="btn-limpar">Limpar</button>
+                </div>
+            </div>
+
+
+
+
             <div class="grid">
                 <div class="panel">
                     <div class="panel-header">
@@ -65,17 +78,52 @@
         </main>
     </div>
 
+    <!-- ===== FILTRO POR DATA ===== -->
+    <script>
+        function filtrarPorData() {
+            const input = document.getElementById('filtroData').value;
+            if (!input) return;
+
+            const tabela = document.querySelector('table'); // assume que sua tabela é a única ou adicione um id
+            const linhas = tabela.querySelectorAll('tbody tr');
+
+            linhas.forEach(linha => {
+                const dataCelula = linha.cells[0].innerText; // a primeira coluna é Data / Hora
+                const dataTabela = new Date(dataCelula.replace(',', '')); // remove a vírgula para conversão
+                const dataFiltro = new Date(input);
+
+                if (dataTabela.toDateString() === dataFiltro.toDateString()) {
+                    linha.style.display = ''; // mostra
+                } else {
+                    linha.style.display = 'none'; // esconde
+                }
+            });
+        }
+
+        function limparFiltroData() {
+            const tabela = document.querySelector('table');
+            const linhas = tabela.querySelectorAll('tbody tr');
+            linhas.forEach(linha => linha.style.display = '');
+            document.getElementById('filtroData').value = '';
+        }
+    </script>
+
+    <!-- ===== SCRIPT ORIGINAL ===== -->
     <script>
         const movesTbody = document.getElementById('moves-tbody');
 
-        // Função para carregar movimentações apenas de brindes e uniformes
-        function carregarMovimentacoes() {
+        function carregarMovimentacoes(localData = true) {
             movesTbody.innerHTML = '';
 
-            const uniformes = JSON.parse(localStorage.getItem('uniformes')) || [];
-            const brindes = JSON.parse(localStorage.getItem('brindes')) || [];
+            let uniformes = JSON.parse(localStorage.getItem('uniformes')) || [];
+            let brindes = JSON.parse(localStorage.getItem('brindes')) || [];
 
-            const todosRegistros = [...brindes, ...uniformes];
+            let todosRegistros = [...brindes, ...uniformes];
+
+            if (!localData && window.firestoreData) {
+                todosRegistros = [...todosRegistros, ...window.firestoreData];
+            }
+
             todosRegistros.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             todosRegistros.forEach(item => {
@@ -87,30 +135,28 @@
                 const dataStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : item.dateTime || '-';
 
                 tr.innerHTML = `
-            <td>${dataStr}</td>
-            <td>${item.name || item.nome || '-'}</td>
-            <td>${item.sender || item.nomePessoa || item.remetente || '-'}</td>
-            <td>${item.type || item.tipo || 'Item'}</td>
-            <td>${item.quantidadeMovimentada || item.quantity || 0}</td>
-            <td>${item.quantidadeFinal || item.quantity || 0}</td>
-            <td>${item.custoUnitario || '-'}</td>
-            <td>${item.custoTotal || '-'}</td>
-            <td>${item.description || item.descricao || '-'}</td>
-            <td>${item.origin || item.origem || '-'}</td>
-            <td>${item.destination || item.destino || '-'}</td>
-        `;
+                <td>${dataStr}</td>
+                <td>${item.name || item.nome || '-'}</td>
+                <td>${item.sender || item.nomePessoa || item.remetente || '-'}</td>
+                <td>${item.type || item.tipo || 'Item'}</td>
+                <td>${item.quantidadeMovimentada || item.quantity || 0}</td>
+                <td>${item.quantidadeFinal || item.quantity || 0}</td>
+                <td>${item.custoUnitario || '-'}</td>
+                <td>${item.custoTotal || '-'}</td>
+                <td>${item.description || item.descricao || '-'}</td>
+                <td>${item.origin || item.origem || '-'}</td>
+                <td>${item.destination || item.destino || '-'}</td>
+            `;
                 movesTbody.appendChild(tr);
             });
         }
 
-        // Atualiza automaticamente quando localStorage muda
         window.addEventListener('storage', event => {
             if (['uniformes', 'brindes'].includes(event.key)) {
                 carregarMovimentacoes();
             }
         });
 
-        // BOTÃO LIMPAR TODOS OS DADOS
         document.getElementById('limpar-dados').addEventListener('click', () => {
             if (confirm("Deseja realmente remover TODOS os dados de brindes e uniformes?")) {
                 localStorage.removeItem('brindes');
@@ -120,7 +166,6 @@
             }
         });
 
-        // FILTRO DE BUSCA
         const searchInput = document.getElementById('search');
         searchInput.addEventListener('input', () => {
             const filter = searchInput.value.toLowerCase();
@@ -139,7 +184,6 @@
             }
         });
 
-        // hamburger menu
         const toggleBtn = document.getElementById('toggle-sidebar');
         const sidebar = document.querySelector('.sidebar');
         toggleBtn.addEventListener('click', () => {
@@ -147,20 +191,44 @@
             toggleBtn.textContent = sidebar.classList.contains('closed') ? '☰' : '✖';
         });
 
-        // Carrega ao abrir a página
-        window.onload = carregarMovimentacoes;
+        window.onload = () => carregarMovimentacoes();
+    </script>
 
-        // Identifica qual página está aberta
-  const currentPage = window.location.pathname.split("/").pop();
+    <!-- ===== FIREBASE FIRESTORE ===== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-  // Marca automaticamente o botão correto como ativo
-  document.querySelectorAll(".btn-nav").forEach(link => {
-    if (link.getAttribute("href") === currentPage) {
-      link.classList.add("active");
-    } else {
-      link.classList.remove("active");
-    }
-  });
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF1nvUVl5mJZqc5oPHLeWbxrYX1tOzYuQ",
+            authDomain: "estoque-nexta.firebaseapp.com",
+            projectId: "estoque-nexta",
+            storageBucket: "estoque-nexta.appspot.com",
+            messagingSenderId: "1063142163386",
+            appId: "1:1063142163386:web:235a6dd699615d999c1383",
+            measurementId: "G-H5VKBEWWRW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const uniformesCol = collection(db, "uniformes");
+        const brindesCol = collection(db, "brindes");
+
+        // === Atualiza em tempo real ===
+        onSnapshot(uniformesCol, snapshot => {
+            const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            window.firestoreData = window.firestoreData || [];
+            window.firestoreData = [...window.firestoreData.filter(i => !i.id || i.tipo !== 'uniforme'), ...data.map(d => ({ ...d, tipo: 'uniforme' }))];
+            carregarMovimentacoes(false);
+        });
+
+        onSnapshot(brindesCol, snapshot => {
+            const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            window.firestoreData = window.firestoreData || [];
+            window.firestoreData = [...window.firestoreData.filter(i => !i.id || i.tipo !== 'brinde'), ...data.map(d => ({ ...d, tipo: 'brinde' }))];
+            carregarMovimentacoes(false);
+        });
     </script>
 
 </body>

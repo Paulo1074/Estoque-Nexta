@@ -521,3 +521,63 @@ form#brindeForm select:focus {
     box-shadow: 0 0 6px rgba(11,116,222,0.4);
     outline: none;
 }
+
+
+/* Container do filtro */
+.filtro-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 16px;
+}
+
+/* Input compacto */
+#filtroData {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s ease;
+    width: 180px; /* mais compacto */
+}
+
+#filtroData:focus {
+    border-color: #0b74de;
+    box-shadow: 0 0 5px rgba(11, 116, 222, 0.3);
+}
+
+/* Botões compactos */
+button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+/* Filtrar */
+.btn-filtrar {
+    background-color: #0b74de;
+    color: #fff;
+}
+
+.btn-filtrar:hover {
+    background-color: #095bb5;
+}
+
+/* Limpar */
+.btn-limpar {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.btn-limpar:hover {
+    background-color: #ccc;
+}
+
+button:active {
+    transform: scale(0.95);
+}
